@@ -10,7 +10,7 @@ typedef struct Contact {
     struct Contact* next;
 } Contact;
 
-// create a new contact
+// Function to create a new contact
 Contact* createContact(const char* name, const char* phone) {
     Contact* newContact = (Contact*)malloc(sizeof(Contact));
     if (newContact != NULL) {
@@ -22,7 +22,7 @@ Contact* createContact(const char* name, const char* phone) {
     return newContact;
 }
 
-// push (insert at the beginning) a contact into the phone book
+// Function to push (insert at the beginning) a contact into the phone book
 void push(Contact** head, const char* name, const char* phone, const char* filename) {
     Contact* newContact = createContact(name, phone);
     if (newContact == NULL) {
@@ -50,8 +50,8 @@ void push(Contact** head, const char* name, const char* phone, const char* filen
     printf("New contact added successfully.\n");
 }
 
-// pull (remove from the beginning) a contact from the phone book
-void pull(Contact** head, const char* name) {
+// Function to pull (remove from the beginning) a contact from the phone book
+void pull(Contact** head, const char* name, const char* filename) {
     if (*head == NULL) {
         printf("Phone book is empty. Cannot delete.\n");
         return;
@@ -70,6 +70,35 @@ void pull(Contact** head, const char* name) {
             }
             printf("Ouch! '%s' has been removed :(\n", name);
             free(current);
+
+            // Remove contact from text file
+            FILE* file = fopen(filename, "r");
+            if (file == NULL) {
+                printf("Error opening file for reading.\n");
+                return;
+            }
+
+            FILE* tempFile = fopen("temp.txt", "w"); // Create temporary file
+            if (tempFile == NULL) {
+                printf("Error creating temporary file.\n");
+                fclose(file);
+                return;
+            }
+
+            char tempName[50];
+            char tempPhone[15];
+            while (fscanf(file, "%s %s", tempName, tempPhone) == 2) {
+                if (strcmp(tempName, name) != 0) {
+                    fprintf(tempFile, "%s %s\n", tempName, tempPhone);
+                }
+            }
+
+            fclose(file);
+            fclose(tempFile);
+
+            remove(filename);            // Remove the original file
+            rename("temp.txt", filename); // Rename temp file to original file
+
             return;
         }
         current = current->next;
@@ -78,7 +107,7 @@ void pull(Contact** head, const char* name) {
     printf("Contact '%s' not found.\n", name);
 }
 
-// display all contacts in the phone book
+// Function to display all contacts in alphabetical order
 void displayContacts(Contact* head) {
     if (head == NULL) {
         printf("Phone book is empty.\n");
@@ -123,7 +152,7 @@ void displayContacts(Contact* head) {
     free(contactsArray);
 }
 
-// search for a contact by name or phone number
+// Function to search for a contact by name or phone number
 void searchContact(Contact* head, const char* query) {
     if (head == NULL) {
         printf("Phone book is empty.\n");
@@ -146,7 +175,7 @@ void searchContact(Contact* head, const char* query) {
     }
 }
 
-// free memory allocated for the phone book
+// Function to free memory allocated for the phone book
 void freePhoneBook(Contact* head) {
     Contact* current = head;
     while (current != NULL) {
@@ -156,7 +185,7 @@ void freePhoneBook(Contact* head) {
     }
 }
 
-// load contacts from the text file
+// Function to load contacts from the text file
 Contact* loadContactsFromFile(const char* filename) {
     FILE* file = fopen(filename, "r");
     if (file == NULL) {
@@ -206,7 +235,7 @@ int main() {
             case 2:
                 printf("Enter name of contact to delete: ");
                 scanf("%s", name);
-                pull(&phoneBook, name);
+                pull(&phoneBook, name, "phone.txt");
                 break;
             case 3:
                 displayContacts(phoneBook);
