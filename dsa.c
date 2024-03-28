@@ -10,7 +10,7 @@ typedef struct Contact {
     struct Contact* next;
 } Contact;
 
-// creating a new contact
+// create a new contact
 Contact* createContact(const char* name, const char* phone) {
     Contact* newContact = (Contact*)malloc(sizeof(Contact));
     if (newContact != NULL) {
@@ -22,7 +22,7 @@ Contact* createContact(const char* name, const char* phone) {
     return newContact;
 }
 
-// pushing (insert at the beginning) a contact into the phone book
+// push (insert at the beginning) a contact into the phone book
 void push(Contact** head, const char* name, const char* phone, const char* filename) {
     Contact* newContact = createContact(name, phone);
     if (newContact == NULL) {
@@ -50,7 +50,7 @@ void push(Contact** head, const char* name, const char* phone, const char* filen
     printf("New contact added successfully.\n");
 }
 
-// pulling (remove from the beginning) a contact from the phone book
+// pull (remove from the beginning) a contact from the phone book
 void pull(Contact** head, const char* name) {
     if (*head == NULL) {
         printf("Phone book is empty. Cannot delete.\n");
@@ -84,11 +84,65 @@ void displayContacts(Contact* head) {
         printf("Phone book is empty.\n");
         return;
     }
+
+    // Count the number of contacts
+    int count = 0;
     Contact* current = head;
-    printf("Contacts in the phone book:\n");
     while (current != NULL) {
-        printf("Name: %s\nPhone: %s\n---------------------------------\n", current->name, current->phone);
+        count++;
         current = current->next;
+    }
+
+    // Create an array of contacts
+    Contact** contactsArray = (Contact**)malloc(count * sizeof(Contact*));
+    current = head;
+    int i = 0;
+    while (current != NULL) {
+        contactsArray[i++] = current;
+        current = current->next;
+    }
+
+    // Sort the contacts by name
+    for (int i = 0; i < count - 1; i++) {
+        for (int j = 0; j < count - i - 1; j++) {
+            if (strcmp(contactsArray[j]->name, contactsArray[j + 1]->name) > 0) {
+                Contact* temp = contactsArray[j];
+                contactsArray[j] = contactsArray[j + 1];
+                contactsArray[j + 1] = temp;
+            }
+        }
+    }
+
+    // Display sorted contacts
+    printf("Contacts in the phone book (sorted by name):\n");
+    for (int i = 0; i < count; i++) {
+        printf("Name: %s\nPhone: %s\n---------------------------------\n", contactsArray[i]->name, contactsArray[i]->phone);
+    }
+
+    // Free allocated memory
+    free(contactsArray);
+}
+
+// search for a contact by name or phone number
+void searchContact(Contact* head, const char* query) {
+    if (head == NULL) {
+        printf("Phone book is empty.\n");
+        return;
+    }
+
+    Contact* current = head;
+    int found = 0;
+    printf("Search results for '%s':\n", query);
+    while (current != NULL) {
+        if (strstr(current->name, query) != NULL || strstr(current->phone, query) != NULL) {
+            printf("Name: %s\nPhone: %s\n---------------------------------\n", current->name, current->phone);
+            found = 1;
+        }
+        current = current->next;
+    }
+
+    if (!found) {
+        printf("No matching contacts found.\n");
     }
 }
 
@@ -104,15 +158,7 @@ void freePhoneBook(Contact* head) {
 
 // load contacts from the text file
 Contact* loadContactsFromFile(const char* filename) {
-    FILE* file = fopen(filename, "a+"); // Open in append mode, create if not exist
-    if (file == NULL) {
-        printf("Error opening file for reading.\n");
-        return NULL;
-    }
-
-    fclose(file); // Close the file
-
-    file = fopen(filename, "r"); // Reopen in read mode
+    FILE* file = fopen(filename, "r");
     if (file == NULL) {
         printf("Error opening file for reading.\n");
         return NULL;
@@ -144,7 +190,8 @@ int main() {
         printf("1. Create Contact\n");
         printf("2. Remove Contact\n");
         printf("3. Display Contacts\n");
-        printf("4. Exit\n");
+        printf("4. Search Contact\n");
+        printf("5. Exit\n");
         printf("Enter your choice: ");
         scanf("%d", &choice);
 
@@ -165,12 +212,17 @@ int main() {
                 displayContacts(phoneBook);
                 break;
             case 4:
+                printf("Enter name or phone number to search: ");
+                scanf("%s", name);
+                searchContact(phoneBook, name);
+                break;
+            case 5:
                 printf("Exiting... Did you call your parents today? :)\n");
                 break;
             default:
                 printf("Invalid choice. Please try again.\n");
         }
-    } while (choice != 4);
+    } while (choice != 5);
 
     // Freeing memory
     freePhoneBook(phoneBook);
